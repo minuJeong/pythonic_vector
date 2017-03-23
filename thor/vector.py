@@ -7,10 +7,6 @@ author: minu jeong
 from functools import partial
 
 
-class _VectorProperty(property):
-    pass
-
-
 class _Vector(object):
     """
     abstract vector class.
@@ -141,7 +137,7 @@ class _Vector(object):
 
 def generate_vector_classes():
     """
-    add Vector1 to Vector10 classes dynamically
+    add Vector1 to Vector[N] classes dynamically
     """
 
     if not __package__:
