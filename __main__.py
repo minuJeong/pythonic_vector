@@ -14,14 +14,21 @@ if sys.version[0] == '3':
 reload(vector)
 
 
-print("=============================")
+print("\n=============================")
 print("TEST RUN STARTED.............")
-print("=============================")
+print("=============================\n")
 
 vector_a = vector.Vector4(1, 2, 3, 4)
+print(vector_a)
 
 
 print("VECTOR A . XYZW", vector_a.xyzw)
+print("VECTOR A . XYZW", vector_a.wzyx)
+
+print("\n/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/")
+print("NORMALIZE.............")
+print("/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\n")
+
 vector_a.normalize()
 print("VECTOR A NORMALIZED", vector_a)
 print("X", vector_a.x)
@@ -34,7 +41,7 @@ print('f', vector_a.xyz)
 vector_a.rb = (1, 5)
 vector_a.zx = (5, 5)
 vector_a.y = 3.0
-print("RBA", vector_a.rba)
+print("RBA", vector_a.rbag)
 
 
 print("\n\n")

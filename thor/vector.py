@@ -5,21 +5,30 @@ author: minu jeong
 """
 
 from functools import partial
-from itertools import permutations
+
+
+class _VectorProperty(property):
+    pass
 
 
 class _Vector(object):
     """
     abstract vector class.
     do not create this class as instance.
+
+    [WARNING]
+    _KEYMAPs should not conflict.
     """
 
-    _precision = float
+    # static:
+    _PRECISION = float
+    _KEYMAP_SET_1 = "xyzw"
+    _KEYMAP_SET_2 = "rgba"
+    _KEYMAP_SET_3 = "uvw"
+
+    # private:
     _dimension = 0
     _data = []
-    _key_mappings_set_1 = "xyzw"
-    _key_mappings_set_2 = "rgba"
-    _key_mappings_set_3 = "uv"
 
     def __init__(self, *argvs):
         """
@@ -29,52 +38,83 @@ class _Vector(object):
         """
 
         self._data = list(map(
-            lambda argv: self._precision(argv),
+            lambda argv: self._PRECISION(argv),
             argvs[:self._dimension]))
 
-        # connect properties
-        mappings = [
-            _Vector._key_mappings_set_1,
-            _Vector._key_mappings_set_2,
-            _Vector._key_mappings_set_3
-        ]
+        self._map_keys()
+
+    def _map_keys(self):
+        """
+        create and connect properties
+        """
 
         def getter_template(idx, instance):
             return instance._data[idx]
 
         def setter_template(idx, instance, value):
-            instance._data[idx] = self._precision(value)
+            instance._data[idx] = _Vector._PRECISION(value)
 
+        # connect properties
+        mappings = [
+            _Vector._KEYMAP_SET_1,
+            _Vector._KEYMAP_SET_2,
+            _Vector._KEYMAP_SET_3
+        ]
+
+        # map single char keys
         for mapping in mappings:
-            # map single char keys
             for map_key in mapping:
                 idx = mapping.index(map_key)
 
-                fprop = property(
+                fprop_single = property(
                     partial(getter_template, idx),
                     partial(setter_template, idx)
                 )
-                setattr(_Vector, map_key, fprop)
+                setattr(type(self), map_key, fprop_single)
 
-            # map multi char keys
-            for count in range(2, len(mapping) + 1):
-                for permute in permutations(mapping, count):
-                    getters = []
-                    setters = []
-                    for w in permute:
-                        idx = mapping.index(w)
-                        getters.append(partial(getter_template, idx))
-                        setters.append(partial(setter_template, idx))
+    def __getattr__(self, attr_name):
+        mappings = [
+            _Vector._KEYMAP_SET_1,
+            _Vector._KEYMAP_SET_2,
+            _Vector._KEYMAP_SET_3
+        ]
+        for mapping in mappings:
+            if any(filter(lambda x: x not in mapping, attr_name)):
+                continue
 
-                    fprop = property(
-                        (lambda ins: [fget(ins) for fget in getters]),
-                        (lambda ins, vs: [fset(ins, v) for fset, v in zip(setters, vs)]),
-                    )
-                    prop_name = ''.join(permute)
-                    setattr(_Vector, prop_name, fprop)
+            result = []
+            for attr_key in attr_name:
+                result.append(
+                    self._data[mapping.index(attr_key)])
+            if result:
+                return result
 
-                    print(prop_name, len(getters))
-                    print((lambda ins: [fget(ins) for fget in getters])(self))
+        raise AttributeError("error getting attribute: {}".format(attr_name))
+
+    def __setattr__(self, attr_name, values):
+        mappings = [
+            _Vector._KEYMAP_SET_1,
+            _Vector._KEYMAP_SET_2,
+            _Vector._KEYMAP_SET_3
+        ]
+
+        if len(attr_name) > 1:
+            for mapping in mappings:
+                if any(filter(lambda x: x not in mapping, attr_name)):
+                    continue
+
+                if not len(attr_name) == len(values):
+                    raise Exception("values count should match the attribute receiver")
+
+                was_valid = False
+                for attr_key, value in zip(attr_name, values):
+                    self._data[mapping.index(attr_key)] = value
+                    was_valid = True
+
+                if was_valid:
+                    return
+
+        super(_Vector, self).__setattr__(attr_name, values)
 
     def __add__(self, dst):
         return type(self)(*list(map(
@@ -90,8 +130,8 @@ class _Vector(object):
         return type(self)(lambda x: x * dst, self._data)
 
     def __repr__(self):
-        return "vector {}, {}, {}".format(
-            self.x, self.y, self.z
+        return "vector {}".format(
+            ', '.join(map(lambda x: str(x), self._data))
         )
 
     def normalize(self):
