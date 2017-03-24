@@ -18,9 +18,11 @@ class _Vector(object):
 
     # static:
     _PRECISION = float
-    _KEYMAP_SET_1 = "xyzw"
-    _KEYMAP_SET_2 = "rgba"
-    _KEYMAP_SET_3 = "uvw"
+    _KEYMAP_SET = [
+        "xyzw",
+        "rgba",
+        "uvw"
+    ]
 
     # private:
     _dimension = 0
@@ -50,15 +52,8 @@ class _Vector(object):
         def setter_template(idx, instance, value):
             instance._data[idx] = _Vector._PRECISION(value)
 
-        # connect properties
-        mappings = [
-            _Vector._KEYMAP_SET_1,
-            _Vector._KEYMAP_SET_2,
-            _Vector._KEYMAP_SET_3
-        ]
-
-        # map single char keys
-        for mapping in mappings:
+        # connect single-char properties
+        for mapping in _Vector._KEYMAP_SET:
             for map_key in mapping:
                 idx = mapping.index(map_key)
 
@@ -69,12 +64,8 @@ class _Vector(object):
                 setattr(type(self), map_key, fprop_single)
 
     def __getattr__(self, attr_name):
-        mappings = [
-            _Vector._KEYMAP_SET_1,
-            _Vector._KEYMAP_SET_2,
-            _Vector._KEYMAP_SET_3
-        ]
-        for mapping in mappings:
+
+        for mapping in _Vector._KEYMAP_SET:
             if any(filter(lambda x: x not in mapping, attr_name)):
                 continue
 
@@ -88,14 +79,9 @@ class _Vector(object):
         raise AttributeError("error getting attribute: {}".format(attr_name))
 
     def __setattr__(self, attr_name, values):
-        mappings = [
-            _Vector._KEYMAP_SET_1,
-            _Vector._KEYMAP_SET_2,
-            _Vector._KEYMAP_SET_3
-        ]
 
         if len(attr_name) > 1:
-            for mapping in mappings:
+            for mapping in _Vector._KEYMAP_SET:
                 if any(filter(lambda x: x not in mapping, attr_name)):
                     continue
 
@@ -123,7 +109,9 @@ class _Vector(object):
             zip(self._data, dst._data))))
 
     def __mul__(self, dst):
-        return type(self)(lambda x: x * dst, self._data)
+        if isinstance(dst, float) or\
+           isinstance(dst, int):
+            return type(self)(*list(map(lambda x: x * dst, self._data)))
 
     def __repr__(self):
         return "vector {}".format(
